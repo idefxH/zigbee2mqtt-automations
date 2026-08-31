@@ -157,6 +157,7 @@ interface ConfigAction {
   entity?: EntityId;
   payload?: ConfigActionPayload;
   payload_off?: ConfigActionPayload;
+  payload_toggle?: ConfigActionPayload[]; // alternates between payloads on each trigger
   turn_off_after?: TurnOffAfterType;
   logger?: LoggerType;
   // scene type action
@@ -272,7 +273,11 @@ class AutomationsExtension {
   private timeAutomations: TimeAutomations = {};
   private readonly triggerForTimeouts: Record<string, NodeJS.Timeout>;
   private readonly turnOffAfterTimeouts: Record<string, NodeJS.Timeout>;
+<<<<<<< HEAD
   private readonly cycleCounts: Record<string, number>;
+=======
+  private readonly togglePayloadState: Record<string, number> = {};
+>>>>>>> pr-34
   private midnightTimeout: NodeJS.Timeout | undefined;
   private readonly log: InternalLogger;
 
@@ -401,6 +406,7 @@ class AutomationsExtension {
           this.logger.error(`[Automations] Config validation error for [${key}]: action entity #${action.entity}# not found`);
           return;
         }
+<<<<<<< HEAD
         if (action.entity && !action.payload && !action.cycle) {
           this.logger.error(`[Automations] Config validation error for [${key}]: action payload or cycle not defined`);
           return;
@@ -413,6 +419,14 @@ class AutomationsExtension {
         }
         if (action.payload && action.cycle) {
           this.logger.error(`[Automations] Config validation error for [${key}]: cannot use both payload and cycle in the same action`);
+=======
+        if (action.entity && !action.payload && !action.payload_toggle) {
+          this.logger.error(`[Automations] Config validation error for [${key}]: action payload not defined`);
+>>>>>>> pr-34
+          return;
+        }
+        if (action.payload_toggle && (!Array.isArray(action.payload_toggle) || action.payload_toggle.length < 2)) {
+          this.logger.error(`[Automations] Config validation error for [${key}]: action payload_toggle must be an array with at least 2 payloads`);
           return;
         }
         if (action.scene && !this.scenes[action.scene]) {
@@ -875,6 +889,7 @@ class AutomationsExtension {
         continue;
       }
       let data: ConfigActionPayload;
+<<<<<<< HEAD
 
       if (action.payload) {
         // this.log.warn('Payload:', typeof action.payload, action.payload)
@@ -891,6 +906,21 @@ class AutomationsExtension {
           }
         } else if (typeof action.payload === 'object') {
           data = action.payload;
+=======
+      // this.log.warn('Payload:', typeof action.payload, action.payload)
+      if (Array.isArray(action.payload_toggle) && action.payload_toggle.length >= 2) {
+        const key = `${automation.name}::${action.entity}`;
+        const index = this.togglePayloadState[key] ?? 0;
+        data = action.payload_toggle[index];
+        this.togglePayloadState[key] = (index + 1) % action.payload_toggle.length;
+      } else if (typeof action.payload === 'string') {
+        if (action.payload === ConfigPayload.TURN_ON) {
+          data = { state: ConfigState.ON };
+        } else if (action.payload === ConfigPayload.TURN_OFF) {
+          data = { state: ConfigState.OFF };
+        } else if (action.payload === ConfigPayload.TOGGLE) {
+          data = { state: ConfigState.TOGGLE };
+>>>>>>> pr-34
         } else {
           this.logger.error(`[Automations] Run automation [${automation.name}] for entity #${action.entity}# error: payload can be turn_on turn_off toggle or an object`);
           return;
